@@ -2,6 +2,10 @@ package edu.bjut.psecagg.app;
 
 import java.util.ArrayList;
 
+import edu.bjut.psecagg.messages.MsgResponseRound0;
+import edu.bjut.psecagg.messages.MsgResponseRound1;
+import edu.bjut.psecagg.messages.MsgResponseRound2;
+import edu.bjut.psecagg.messages.MsgResponseRound3;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.StopWatch;
@@ -49,19 +53,19 @@ public class AggApp {
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
         // Round 0 (AdvertiseKeys)
-        var msgResponse0 = aggregation.advertiseKeys();
+        MsgResponseRound0 msgResponse0 = aggregation.advertiseKeys();
         if (null == msgResponse0) throw new RuntimeException("smaller than share threshold");
 
         // Round1 (ShareKeys)
-        var msgResponse1 =  aggregation.shareKeys(msgResponse0);
+        MsgResponseRound1 msgResponse1 =  aggregation.shareKeys(msgResponse0);
         if (null == msgResponse1) throw new RuntimeException("smaller than share threshold");
 
         // Round 2
-        var msgResponse2 = aggregation.maskedInputCollection(msgResponse1);
+        MsgResponseRound2 msgResponse2 = aggregation.maskedInputCollection(msgResponse1);
         if (null == msgResponse2) throw new RuntimeException("smaller than share threshold");
 
         // Round 3
-        var msgResponse3 = aggregation.consistencyCheck(msgResponse2);
+        MsgResponseRound3 msgResponse3 = aggregation.consistencyCheck(msgResponse2);
         if (null == msgResponse3) throw new RuntimeException("smaller than share threshold");
 
         // Round 4

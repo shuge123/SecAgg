@@ -45,7 +45,7 @@ public class Aggregation {
     }
 
     public MsgResponseRound0 advertiseKeys() {
-        for (var p : participants) {
+        for (Participant p : participants) {
             MsgRound0 msgRound0 = p.sendMsgRound0();
             this.parameterServer.recvMsgRound0(msgRound0);
         }
@@ -53,7 +53,7 @@ public class Aggregation {
     }
 
     public MsgResponseRound1 shareKeys(MsgResponseRound0 msgResponse) {
-        for (var p : this.participants) {
+        for (Participant p : this.participants) {
             MsgRound1 msgRound1 = p.sendMsgRound1(msgResponse);
             this.parameterServer.recvMsgRound1(msgRound1);
         }
@@ -69,7 +69,7 @@ public class Aggregation {
     }
 
     public MsgResponseRound3 consistencyCheck(MsgResponseRound2 msgResponse2) {
-        for (var p : this.participants) {
+        for (Participant p : this.participants) {
             MsgRound3 msgRound3 = p.sendMsgRound3(msgResponse2);
             this.parameterServer.recvMsgRound3(msgRound3);
         }
@@ -77,7 +77,7 @@ public class Aggregation {
     }
 
     public BigVec unmasking(MsgResponseRound3 msgResponse3) {
-        for (var p : this.participants) {
+        for (Participant p : this.participants) {
             MsgRound4 msgRound4 = p.sendMsgRound4(msgResponse3);
             this.parameterServer.recvMsgRound4(msgRound4);
         }
@@ -92,7 +92,7 @@ public class Aggregation {
             clientElapses.add(timeStatics(this.participants.get(i).getStopWatch()));
         }
         long clientTotal = 0;
-        for (var i : clientElapses) {
+        for (Long i : clientElapses) {
             LOG.warn("client:" + i);
             clientTotal += i;
         }
@@ -101,7 +101,7 @@ public class Aggregation {
     }
 
     private long timeStatics(StopWatch stopWatch) {
-        var taskInfos = stopWatch.getTaskInfo();
+        StopWatch.TaskInfo[] taskInfos = stopWatch.getTaskInfo();
         int len = taskInfos.length;
         StringBuilder headBuilder = new StringBuilder();
         for (int i = 0; i < len; ++i) {

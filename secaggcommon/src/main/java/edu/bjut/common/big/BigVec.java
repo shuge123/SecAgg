@@ -41,7 +41,7 @@ public class BigVec {
     }
     
     public BigVec add(BigVec val) {
-        var c = new BigVec(this.size);
+        BigVec c = new BigVec(this.size);
         for (int i = 0; i < this.size; ++i) {
             c.bigs[i] = this.bigs[i].add(val.bigs[i]);
         }
@@ -49,7 +49,7 @@ public class BigVec {
     }
 
     public BigVec subtract(BigVec val) {
-        var c = new BigVec(this.size);
+        BigVec c = new BigVec(this.size);
         for (int i = 0; i < this.size; ++i) {
             c.bigs[i] = this.bigs[i].subtract(val.bigs[i]);
         }

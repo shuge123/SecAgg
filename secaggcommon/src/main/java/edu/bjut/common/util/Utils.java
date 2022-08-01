@@ -56,7 +56,7 @@ public class Utils {
     public static boolean[] setFailedParticipants(int fail, int length) {
         boolean[] results = new boolean[length];
         if (fail >= length) {
-            for (var i = 0; i < fail; ++i) results[i] = true;
+            for (int i = 0; i < fail; ++i) results[i] = true;
         } else {
             Random rnd = new Random();
             while (fail > 0) {

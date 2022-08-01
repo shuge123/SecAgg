@@ -140,15 +140,15 @@ public class Participant {
     }
 
     public String getSymmetricKey(long vId) {
-        var encK = this.cPubKeys.get(vId).getImmutable().pow(this.cSk_u);
+        Element encK = this.cPubKeys.get(vId).getImmutable().pow(this.cSk_u);
         LOG.debug("aes key (" + vId + ")v id: " + encK.toString());
         return encK.toString();
     }
 
     public MsgRound1 sendMsgRound1(MsgResponseRound0 msgResponse) {
         this.stopWatch.start("round1_send_verify");
-        var msg = msgResponse.getPubKeys();
-        for (var m : msg) {
+        ArrayList<MsgRound0> msg = msgResponse.getPubKeys();
+        for (MsgRound0 m : msg) {
             if (this.id == m.getId())
                 continue;
             if (!verifySign(m.getId(), m.getcPk_u(), m.getsPk_u(), m.getSigma_u()))
@@ -172,7 +172,7 @@ public class Participant {
         ArrayList<CipherShare> cipherShares = new ArrayList<>();
         Iterator<Long> it = this.sPubKeys.keySet().iterator();
         for (int i = 0; i < b_uShares.length - 1; ++i) {
-            var vId = it.next();
+            Long vId = it.next();
             try {
                 // generate symmetric key and aes encrypt
                 AesCipher aesCipher = new AesCipher(getSymmetricKey(vId), Cipher.ENCRYPT_MODE);
@@ -183,7 +183,7 @@ public class Participant {
                 byte[] sKNumber = sSk_uShares[i].getNumber().toByteArray();
                 byte[] sKShare = sSk_uShares[i].getShare().toByteArray();
                 // encrypt u, v, s^SK_u, b_u,v
-                var cipherShare = new CipherShare(this.id, vId, aesCipher.encrypt(idBuffer.array()),
+                CipherShare cipherShare = new CipherShare(this.id, vId, aesCipher.encrypt(idBuffer.array()),
                         aesCipher.encrypt(vIdBuffer.array()), aesCipher.encrypt(buNumber), aesCipher.encrypt(buShare),
                         aesCipher.encrypt(sKNumber), aesCipher.encrypt(sKShare));
                 cipherShares.add(cipherShare);
@@ -198,16 +198,16 @@ public class Participant {
     public MsgRound2 sendMsgRound2(MsgResponseRound1 msgResponse1) {
         this.stopWatch.start("round2_send");
         ArrayList<MsgRound1> msgResponses = msgResponse1.getMsgRound1s();
-        for (var m : msgResponses) {
-            var uvCipherShares = m.getCiperShares();
-            for (var s : uvCipherShares) {
+        for (MsgRound1 m : msgResponses) {
+            ArrayList<CipherShare> uvCipherShares = m.getCiperShares();
+            for (CipherShare s : uvCipherShares) {
                 if (s.getvId() == this.id) {
                     this.cipherShareMap.put(s.getuId(), s);
                     this.u2ids.add(s.getuId());
                 }
             }
         }
-        var bUPrg = BigVec.genPRGBigVec(this.b_u.toString(), this.gSize);
+        BigVec bUPrg = BigVec.genPRGBigVec(this.b_u.toString(), this.gSize);
         BigVec y_u = this.x_u.add(bUPrg).add(genMaskedInputCollection());
         this.stopWatch.stop();
         return new MsgRound2(this.id, y_u);
@@ -216,13 +216,13 @@ public class Participant {
     private BigVec genMaskedInputCollection() {
         LOG.debug("MaskedInputCollection.");
         BigVec p = BigVec.Zero(this.gSize);
-        for (var e : sPubKeys.entrySet()) {
+        for ( Map.Entry<Long, Element> e : sPubKeys.entrySet()) {
             Element sUV = e.getValue().getImmutable().duplicate().mul(this.sSk_u);
             LOG.debug("private: " + this.sSk_u + ", public: " + e.getValue());
             BigInteger sUVBig = Utils.hash2Big(sUV.toString(), this.order);
             LOG.info(this.id + " share with " + e.getKey() + ": " + sUVBig);
             // bUPRG vector
-            var bUPrg = BigVec.genPRGBigVec(sUVBig.toString(), this.gSize);
+            BigVec bUPrg = BigVec.genPRGBigVec(sUVBig.toString(), this.gSize);
             if (this.id > e.getKey()) {
                 LOG.info("add");
                 p = p.add(bUPrg);
@@ -236,7 +236,7 @@ public class Participant {
 
     public MsgRound3 sendMsgRound3(MsgResponseRound2 msgResponse2) {
         this.stopWatch.start("round3_send");
-        var idList = msgResponse2.getU3ids();
+        ArrayList<Long>  idList = msgResponse2.getU3ids();
         this.u3ids.addAll(idList);
         StringBuilder stringBuilder = new StringBuilder();
         idList.forEach(stringBuilder::append);
@@ -249,7 +249,7 @@ public class Participant {
     public MsgRound4 sendMsgRound4(MsgResponseRound3 msgResponse3) {
         this.stopWatch.start("round4_send");
         // verify
-        for (var s : msgResponse3.getSigmas()) {
+        for (MsgRound3 s : msgResponse3.getSigmas()) {
             StringBuilder stringBuilder = new StringBuilder();
             this.u3ids.forEach(stringBuilder::append);
             LOG.trace("Verify id list in Round 4");
@@ -261,7 +261,7 @@ public class Participant {
 
         ArrayList<BetaShare> betaShares = new ArrayList<>();
         ArrayList<UShare> uShares = new ArrayList<>();
-        for (var x : u2ids) {
+        for (Long x : u2ids) {
             // decrypt the shares
             boolean needSk = false;
             boolean needBu = false;
@@ -271,7 +271,7 @@ public class Participant {
                 } else {
                     needSk = true;
                 }
-                var cipherShare = cipherShareMap.get(x);
+                CipherShare cipherShare = cipherShareMap.get(x);
                 UVShare uvShare = decryptShare(cipherShare, getSymmetricKey(x), needSk);
                 if (needBu) {
                     BetaShare betaShare = new BetaShare(x, uvShare.getB_uShare());
@@ -298,8 +298,8 @@ public class Participant {
         byte[] cbuShare = cipherShare.getBuShare();
         byte[] csKNumber = cipherShare.getSuNumber();
         byte[] csKShare = cipherShare.getSuShare();
-        var uId = ByteBuffer.wrap(aesCipher.decrypt(cUid)).getLong();
-        var vId = ByteBuffer.wrap(aesCipher.decrypt(cVid)).getLong();
+        long uId = ByteBuffer.wrap(aesCipher.decrypt(cUid)).getLong();
+        long vId = ByteBuffer.wrap(aesCipher.decrypt(cVid)).getLong();
         SecretShareBigInteger b_uShare = new SecretShareBigInteger(new BigInteger(aesCipher.decrypt(cbuNumber)),
                 new BigInteger(aesCipher.decrypt(cbuShare)));
         SecretShareBigInteger svuShare = null;

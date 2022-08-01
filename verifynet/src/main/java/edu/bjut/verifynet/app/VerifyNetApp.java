@@ -4,6 +4,10 @@ import edu.bjut.common.big.BigVec;
 import edu.bjut.common.messages.ParamsECC;
 import edu.bjut.verifynet.entity.ParameterServer;
 import edu.bjut.verifynet.entity.Participant;
+import edu.bjut.verifynet.messages.MsgResponseRound0;
+import edu.bjut.verifynet.messages.MsgResponseRound1;
+import edu.bjut.verifynet.messages.MsgResponseRound2;
+import edu.bjut.verifynet.messages.MsgResponseRound3;
 import net.sourceforge.argparse4j.ArgumentParsers;
 import net.sourceforge.argparse4j.inf.ArgumentParser;
 import net.sourceforge.argparse4j.inf.Namespace;
@@ -48,19 +52,19 @@ public class VerifyNetApp {
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
         // Round 0 (AdvertiseKeys)
-        var msgResponse0 = aggregation.advertiseKeys();
+        MsgResponseRound0 msgResponse0 = aggregation.advertiseKeys();
         if (null == msgResponse0) throw new RuntimeException("smaller than share threshold");
 
         // Round1 (ShareKeys)
-        var msgResponse1 =  aggregation.shareKeys(msgResponse0);
+        MsgResponseRound1 msgResponse1 =  aggregation.shareKeys(msgResponse0);
         if (null == msgResponse1) throw new RuntimeException("smaller than share threshold");
 
         // Round 2
-        var msgResponse2 = aggregation.maskedInputCollection(msgResponse1);
+        MsgResponseRound2 msgResponse2 = aggregation.maskedInputCollection(msgResponse1);
         if (null == msgResponse2) throw new RuntimeException("smaller than share threshold");
 
         // Round 3
-        var msgResponse3 = aggregation.consistencyCheck(msgResponse2);
+        MsgResponseRound3 msgResponse3 = aggregation.consistencyCheck(msgResponse2);
         if (null == msgResponse3) throw new RuntimeException("smaller than share threshold");
 
         // Round 4

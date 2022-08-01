@@ -125,8 +125,8 @@ public class ParameterServer {
 
     public void recvMsgRound4(MsgRound4 msgRound4) {
         this.stopWatch.start("round4_recive");
-        var betaShares = msgRound4.getBetaShares();
-        var svnShares = msgRound4.getSvuShares();
+        ArrayList<BetaShare> betaShares = msgRound4.getBetaShares();
+        ArrayList<UShare> svnShares = msgRound4.getSvuShares();
         betaShares.forEach(x -> {
             this.buMap.computeIfAbsent(x.getId(), k -> new ArrayList<>());
             this.buMap.get(x.getId()).add(x.getBetaShare());
@@ -142,42 +142,42 @@ public class ParameterServer {
         this.stopWatch.start("agg_1");
         int gSize = this.y_uList.get(0).size();
         BigVec sigmaX_u = BigVec.Zero(gSize);
-        for (var x : y_uList) {
+        for (BigVec x : y_uList) {
             sigmaX_u = sigmaX_u.add(x);
         }
         BigVec pu = BigVec.Zero(gSize);
 
         ArrayList<Long> except = new ArrayList<>();
-        for (var i : u2ids) {
+        for (Long i : u2ids) {
             if (u3Ids.contains(i)) {
                 except.add(i);
             }
         }
         this.stopWatch.stop();
         this.stopWatch.start("agg_2");
-        for (var e : buMap.entrySet()) {
-            var k = e.getKey();
-            var v = e.getValue();
+        for (Map.Entry<Long, ArrayList<SecretShareBigInteger>> e : buMap.entrySet()) {
+            Long k = e.getKey();
+            ArrayList<SecretShareBigInteger> v = e.getValue();
             LOG.info(String.valueOf(k));
             SecretShareBigInteger[] shares = new SecretShareBigInteger[v.size()];
-            var puBig = Shamir.combine(v.toArray(shares), order);
+            BigInteger puBig = Shamir.combine(v.toArray(shares), order);
             PRG prg = new PRG(puBig.toString());
-            var puBigArray = prg.genBigs(gSize);
+            BigInteger[] puBigArray = prg.genBigs(gSize);
             pu = pu.add(new BigVec(puBigArray));
         }
         this.stopWatch.stop();
         this.stopWatch.start("agg_3");
         BigVec puv = BigVec.Zero(gSize);
-        for (var e : svnMap.entrySet()) {
+        for (Map.Entry<Long, ArrayList<SecretShareBigInteger>> e : svnMap.entrySet()) {
             long u = e.getKey();
             SecretShareBigInteger[] shares = new SecretShareBigInteger[e.getValue().size()];
             BigInteger key = Shamir.combine(e.getValue().toArray(shares), order);
-            for (var v : except) {
+            for (Long v : except) {
                 Element suv = this.sPk_uMap.get(v).getImmutable().mul(key);
                 BigInteger suvBig = Utils.hash2Big(suv.toString(), order);
                 LOG.debug(u + " to " + v + ": ");
                 PRG prg = new PRG(suvBig.toString());
-                var suvBigArray = prg.genBigs(gSize);
+                BigInteger[] suvBigArray = prg.genBigs(gSize);
                 if (u > v) {
                     LOG.debug("subtract: " + suvBig);
                     puv = puv.subtract(new BigVec(suvBigArray));
